@@ -1,4 +1,5 @@
 import os
+import re
 
 from .directory import Directory
 
@@ -18,7 +19,8 @@ class Sanitizer:
         source_dir = f"{base_dir}/source"
         directory = Directory(base_dir, source_dir)
         book_title = self.book.get('title')
-        r_path = f"{directory.base_dir}/{book_title}"
+        title = self.sanitize_filename(book_title)
+        r_path = f"{directory.base_dir}/{title}"
         target_dir = directory.create(relative_path=r_path)
 
         image_src = self.book.get("image_src")
@@ -33,9 +35,14 @@ class Sanitizer:
             chapter_file_path = directory.find_file(source_dir, chapter)
             self._copy(directory, chapter_file_path, target_dir)
 
+    @staticmethod
+    def sanitize_filename(filename):
+        # Remove characters that are not allowed in Windows filenames
+        return re.sub(r'[<>:"/\\|?*]', '', filename)
+
     def _copy(self, directory: Directory, source: str, target: str):
         try:
             directory.copy_file(source, target)
         except FileNotFoundError:
-            with open("log.txt", mode="a") as log:
+            with open("log.txt", mode="a", encoding="utf-8") as log:
                 log.write(f"{self.book.get('title')}: File {source} not found \n")
